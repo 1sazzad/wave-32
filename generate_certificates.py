@@ -19,6 +19,7 @@ import csv
 import json
 import os
 import sys
+import unicodedata
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -158,7 +159,7 @@ def draw_certificate(cv, participant_name, team_name, index,
     event_y = msg_y - 9.5 * mm
     cv.setFillColor(CHARCOAL)
     cv.setFont("Helvetica-Bold", 14)
-    cv.drawCentredString(W / 2, event_y, "ReSterT - 30")
+    cv.drawCentredString(W / 2, event_y, "RESTART-30")
     cv.setFillColor(MID_GRAY)
     cv.setFont("Helvetica", 9.3)
     cv.drawCentredString(W / 2, event_y - 5.4 * mm, "Intra-University Programming Contest · August 2025")
@@ -206,25 +207,59 @@ def draw_certificate(cv, participant_name, team_name, index,
     # Serial number and note.
     cv.setFillColor(MID_GRAY)
     cv.setFont("Helvetica", 8.5)
-    cv.drawCentredString(W / 2, page_margin - 1.5 * mm, f"CERTIFICATE ID: PCIST / ReSterT-30 / 2025 / {index:03d}")
+    cv.drawCentredString(W / 2, page_margin - 1.5 * mm, f"CERTIFICATE ID: PCIST / RESTART-30 / 2025 / {index:03d}")
 
 
 def parse_participants(csv_path):
     """Parse all participants (leader + member 2 + member 3) from Google Form CSV export."""
+    def normalize_header(value):
+        return "".join(ch for ch in value.lower() if ch.isalnum())
+
+    def clean_name(value):
+        # Remove zero-width/invisible format chars and normalize spaces.
+        cleaned = "".join(ch for ch in value if unicodedata.category(ch) != "Cf")
+        return " ".join(cleaned.split())
+
+    def find_column(header_map, aliases):
+        for alias in aliases:
+            key = normalize_header(alias)
+            if key in header_map:
+                return header_map[key]
+        return None
+
     participants = []
     with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        headers = reader.fieldnames
+        headers = reader.fieldnames or []
+        header_map = {normalize_header(h): h for h in headers if h}
+
+        team_col = find_column(header_map, ["Team Name"])
+        member_cols = [
+            (
+                find_column(header_map, ["Team Leader Name", "Member -1", "Member 1"]),
+                find_column(header_map, ["Team Leader Email", "Member -1 email", "Member 1 email"]),
+            ),
+            (
+                find_column(header_map, ["Member 2 Name", "Member - 2", "Member -2", "Member 2"]),
+                find_column(header_map, ["Member 2 Email", "Member - 2 email", "Member -2 email", "Member 2 email"]),
+            ),
+            (
+                find_column(header_map, ["Member 3 Name", "Member - 3", "Member -3", "Member 3"]),
+                find_column(header_map, ["Member 3 Email", "Member - 3 email", "Member -3 email", "Member 3 email"]),
+            ),
+        ]
+
+        if not team_col:
+            raise ValueError("Could not find 'Team Name' column in responses.csv")
+
         for row in reader:
-            team_col = [k for k in headers if 'Team Name' in k][0]
-            team = row[team_col].strip()
-            for name_col, email_col in [
-                ("Team Leader Name   ", "Team Leader Email  "),
-                (" Member 2 Name  ",    "Member 2 Email"),
-                (" Member 3 Name  ",    "Member 3 Email"),
-            ]:
-                name  = row.get(name_col, "").strip()
-                email = row.get(email_col, "").strip()
+            team = " ".join(row.get(team_col, "").split())
+            for name_col, email_col in member_cols:
+                if not name_col or not email_col:
+                    continue
+
+                name = clean_name(row.get(name_col, ""))
+                email = "".join(row.get(email_col, "").split())
                 if name and email and "@" in email:
                     participants.append({"name": name, "team": team, "email": email})
     return participants
