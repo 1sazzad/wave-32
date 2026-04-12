@@ -103,7 +103,7 @@ def draw_certificate(cv, participant_name, team_name, index,
     cv.drawCentredString(W / 2, H - page_margin - 8.2 * mm, "INSTITUTE OF SCIENCE AND TECHNOLOGY")
     cv.setFont("Helvetica", 9)
     cv.setFillColor(MID_GRAY)
-    cv.drawCentredString(W / 2, H - page_margin - 13.8 * mm, "PROGRAMMING CLUB OF IST · DHAKA, BANGLADESH")
+    cv.drawCentredString(W / 2, H - page_margin - 13.8 * mm, "Programming Club of IST (pcIST) · DHAKA, BANGLADESH")
 
     cv.setStrokeColor(LIGHT_GRAY)
     cv.setLineWidth(0.8)
