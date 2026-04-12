@@ -60,158 +60,188 @@ W, H = landscape(A4)
 
 def draw_certificate(cv, participant_name, team_name, index,
                      pres_name, pres_title, dh_name, dh_title):
+    page_margin = 10 * mm
 
-    # 1. Cream background
+    # Base paper and framing.
     cv.setFillColor(CREAM)
     cv.rect(0, 0, W, H, fill=1, stroke=0)
 
-    # 2. Full-bleed top & bottom navy bars
-    bar_h = 14 * mm
+    cv.setStrokeColor(colors.HexColor("#C9A24D"))
+    cv.setLineWidth(2.2)
+    cv.rect(page_margin, page_margin, W - 2 * page_margin, H - 2 * page_margin, fill=0, stroke=1)
+
+    inner_gap = 3.5
+    cv.setStrokeColor(colors.HexColor("#E4C676"))
+    cv.setLineWidth(0.8)
+    cv.rect(
+        page_margin + inner_gap,
+        page_margin + inner_gap,
+        W - 2 * (page_margin + inner_gap),
+        H - 2 * (page_margin + inner_gap),
+        fill=0,
+        stroke=1,
+    )
+
+    # Visual identity bands.
+    top_band_h = 24 * mm
+    bottom_band_h = 16 * mm
     cv.setFillColor(NAVY)
-    cv.rect(0, H - bar_h, W, bar_h, fill=1, stroke=0)
-    cv.rect(0, 0, W, bar_h, fill=1, stroke=0)
-    cv.setStrokeColor(GOLD2); cv.setLineWidth(1.2)
-    cv.line(0, H - bar_h - 1, W, H - bar_h - 1)
-    cv.line(0, bar_h + 1, W, bar_h + 1)
+    cv.rect(page_margin, H - page_margin - top_band_h, W - 2 * page_margin, top_band_h, fill=1, stroke=0)
+    cv.setFillColor(colors.HexColor("#122742"))
+    cv.rect(page_margin, page_margin, W - 2 * page_margin, bottom_band_h, fill=1, stroke=0)
 
-    # 3. Outer border frame (double line)
-    m = 6 * mm
-    cv.setStrokeColor(GOLD1); cv.setLineWidth(2.5)
-    cv.rect(m, m, W - 2*m, H - 2*m, fill=0, stroke=1)
-    cv.setStrokeColor(GOLD3); cv.setLineWidth(0.6)
-    cv.rect(m + 3, m + 3, W - 2*m - 6, H - 2*m - 6, fill=0, stroke=1)
+    accent_h = 2.2 * mm
+    cv.setFillColor(GOLD2)
+    cv.rect(page_margin, H - page_margin - top_band_h - accent_h, W - 2 * page_margin, accent_h, fill=1, stroke=0)
+    cv.rect(page_margin, page_margin + bottom_band_h, W - 2 * page_margin, accent_h, fill=1, stroke=0)
 
-    # 4. Corner flourishes
-    def flourish(cx, cy, rot):
-        cv.saveState()
-        cv.translate(cx, cy); cv.rotate(rot)
-        cv.setStrokeColor(GOLD1); cv.setLineWidth(1)
-        cv.setFillColor(GOLD1)
-        cv.line(0, 0, 18, 0); cv.line(0, 0, 0, 18)
-        p = cv.beginPath()
-        p.moveTo(0, 5); p.lineTo(5, 0); p.lineTo(0, -5); p.lineTo(-5, 0); p.close()
-        cv.drawPath(p, fill=1, stroke=0)
-        for d in [8, 14]:
-            cv.line(d, -2, d, 2)
-            cv.line(-2, d, 2, d)
-        cv.restoreState()
-
-    pad = m + 5
-    flourish(pad,     H - pad,  0)
-    flourish(W - pad, H - pad, -90)
-    flourish(pad,     pad,      90)
-    flourish(W - pad, pad,      180)
-
-    # 5. Logos + institute name in top bar
-    logo_sz = 10 * mm
-    logo_y  = H - bar_h + (bar_h - logo_sz) / 2
+    # Logos and organizer lines.
+    logo_size = 14 * mm
+    logo_y = H - page_margin - top_band_h + (top_band_h - logo_size) / 2
     try:
-        cv.drawImage(PCIST_LOGO, 16*mm, logo_y,
-                     width=logo_sz, height=logo_sz, preserveAspectRatio=True, mask='auto')
+        cv.drawImage(
+            PCIST_LOGO,
+            page_margin + 8 * mm,
+            logo_y,
+            width=logo_size,
+            height=logo_size,
+            preserveAspectRatio=True,
+            mask='auto',
+        )
     except Exception:
         pass
     try:
-        cv.drawImage(IST_LOGO, W - 16*mm - logo_sz, logo_y,
-                     width=logo_sz, height=logo_sz, preserveAspectRatio=True, mask='auto')
+        cv.drawImage(
+            IST_LOGO,
+            W - page_margin - 8 * mm - logo_size,
+            logo_y,
+            width=logo_size,
+            height=logo_size,
+            preserveAspectRatio=True,
+            mask='auto',
+        )
     except Exception:
         pass
-    cv.setFillColor(WHITE); cv.setFont("Helvetica-Bold", 9)
-    cv.drawCentredString(W/2, H - bar_h + bar_h * 0.58,
-                         "INSTITUTE OF SCIENCE AND TECHNOLOGY")
-    cv.setFont("Helvetica", 7); cv.setFillColor(GOLD3)
-    cv.drawCentredString(W/2, H - bar_h + bar_h * 0.22,
-                         "Programming Club of IST  \u00b7  Dhaka, Bangladesh")
 
-    # 6. "CERTIFICATE OF PARTICIPATION" heading
-    top_y = H - bar_h - 16*mm
-    cv.setFillColor(NAVY); cv.setFont("Helvetica-Bold", 30)
-    cv.drawCentredString(W/2, top_y, "CERTIFICATE")
-    sub_y    = top_y - 8*mm
-    sub_text = "OF  PARTICIPATION"
-    sub_w    = cv.stringWidth(sub_text, "Helvetica", 11)
-    cv.setFont("Helvetica", 11); cv.setFillColor(GOLD1)
-    cv.drawCentredString(W/2, sub_y, sub_text)
-    gap    = 8
-    line_w = 52 * mm
-    cv.setStrokeColor(GOLD2); cv.setLineWidth(0.8)
-    cv.line(W/2 - sub_w/2 - gap - line_w, sub_y + 4, W/2 - sub_w/2 - gap, sub_y + 4)
-    cv.line(W/2 + sub_w/2 + gap, sub_y + 4, W/2 + sub_w/2 + gap + line_w, sub_y + 4)
+    cv.setFillColor(WHITE)
+    cv.setFont("Helvetica-Bold", 10)
+    cv.drawCentredString(W / 2, H - page_margin - 8.8 * mm, "INSTITUTE OF SCIENCE AND TECHNOLOGY")
+    cv.setFont("Helvetica", 8)
+    cv.setFillColor(colors.HexColor("#E9CC84"))
+    cv.drawCentredString(W / 2, H - page_margin - 14.3 * mm, "PROGRAMMING CLUB OF IST · DHAKA, BANGLADESH")
 
-    # 7. Divider line
-    div_y = sub_y - 6*mm
-    cv.setStrokeColor(LIGHT_LINE); cv.setLineWidth(0.5)
-    cv.line(W * 0.12, div_y, W * 0.88, div_y)
+    # Main title block.
+    title_y = H - page_margin - top_band_h - 18 * mm
+    cv.setFillColor(NAVY)
+    cv.setFont("Times-Bold", 33)
+    cv.drawCentredString(W / 2, title_y, "CERTIFICATE")
 
-    # 8. "This is to certify that"
-    cv.setFillColor(MID_GRAY); cv.setFont("Helvetica-Oblique", 10)
-    cv.drawCentredString(W/2, div_y - 9*mm, "This is to certify that")
+    subtitle = "OF PARTICIPATION"
+    cv.setFont("Helvetica-Bold", 11)
+    cv.setFillColor(colors.HexColor("#9D7730"))
+    cv.drawCentredString(W / 2, title_y - 7 * mm, subtitle)
 
-    # 9. Participant name with ivory highlight strip
-    name_y       = div_y - 21*mm
-    name_strip_h = 10*mm
+    sub_w = cv.stringWidth(subtitle, "Helvetica-Bold", 11)
+    cv.setStrokeColor(colors.HexColor("#CBA552"))
+    cv.setLineWidth(1)
+    wing = 40 * mm
+    wing_gap = 7
+    wing_y = title_y - 4.8 * mm
+    cv.line(W / 2 - sub_w / 2 - wing_gap - wing, wing_y, W / 2 - sub_w / 2 - wing_gap, wing_y)
+    cv.line(W / 2 + sub_w / 2 + wing_gap, wing_y, W / 2 + sub_w / 2 + wing_gap + wing, wing_y)
+
+    # Recipient section.
+    intro_y = title_y - 18 * mm
+    cv.setFillColor(MID_GRAY)
+    cv.setFont("Helvetica-Oblique", 11)
+    cv.drawCentredString(W / 2, intro_y, "This certificate is proudly presented to")
+
+    name_box_w = W * 0.72
+    name_box_h = 15 * mm
+    name_box_x = (W - name_box_w) / 2
+    name_box_y = intro_y - 14.5 * mm
     cv.setFillColor(IVORY)
-    cv.rect(W * 0.15, name_y - 1*mm, W * 0.70, name_strip_h, fill=1, stroke=0)
-    cv.setStrokeColor(GOLD2); cv.setLineWidth(0.7)
-    cv.line(W * 0.15, name_y - 1*mm, W * 0.85, name_y - 1*mm)
-    cv.line(W * 0.15, name_y - 1*mm + name_strip_h, W * 0.85, name_y - 1*mm + name_strip_h)
-    font_size = 24
-    while cv.stringWidth(participant_name, "Helvetica-Bold", font_size) > W * 0.60 and font_size > 14:
-        font_size -= 1
-    cv.setFillColor(NAVY); cv.setFont("Helvetica-Bold", font_size)
-    cv.drawCentredString(W/2, name_y + 2*mm, participant_name)
+    cv.roundRect(name_box_x, name_box_y, name_box_w, name_box_h, 3.2 * mm, fill=1, stroke=0)
+    cv.setStrokeColor(colors.HexColor("#D9B970"))
+    cv.setLineWidth(1)
+    cv.roundRect(name_box_x, name_box_y, name_box_w, name_box_h, 3.2 * mm, fill=0, stroke=1)
 
-    # 10. Team name
-    cv.setFillColor(MID_GRAY); cv.setFont("Helvetica", 9.5)
-    cv.drawCentredString(W/2, name_y - 7*mm, "representing team")
-    cv.setFillColor(GOLD1); cv.setFont("Helvetica-Bold", 13)
-    cv.drawCentredString(W/2, name_y - 14*mm, team_name)
-
-    # 11. Contest name box
-    cv.setFillColor(MID_GRAY); cv.setFont("Helvetica", 9.5)
-    cv.drawCentredString(W/2, name_y - 21*mm, "has successfully participated in")
-    cbox_y = name_y - 33*mm
-    cbox_h = 12*mm
+    name_font = 27
+    while cv.stringWidth(participant_name, "Times-Bold", name_font) > name_box_w - 14 * mm and name_font > 16:
+        name_font -= 1
     cv.setFillColor(NAVY)
-    cv.roundRect(W/2 - 52*mm, cbox_y, 104*mm, cbox_h, 2*mm, fill=1, stroke=0)
-    cv.setFillColor(WHITE); cv.setFont("Helvetica-Bold", 13)
-    cv.drawCentredString(W/2, cbox_y + cbox_h * 0.55, "ReSterT \u2014 30")
-    cv.setFillColor(GOLD3); cv.setFont("Helvetica", 8)
-    cv.drawCentredString(W/2, cbox_y + cbox_h * 0.18,
-                         "Intra-University Programming Contest  \u00b7  August 2025")
+    cv.setFont("Times-Bold", name_font)
+    cv.drawCentredString(W / 2, name_box_y + 4.5 * mm, participant_name)
 
-    # 12. Divider above signature area
-    sdiv_y = bar_h + 22*mm
-    cv.setStrokeColor(LIGHT_LINE); cv.setLineWidth(0.5)
-    cv.line(W * 0.12, sdiv_y, W * 0.88, sdiv_y)
+    # Event detail cards.
+    msg_y = name_box_y - 10 * mm
+    cv.setFillColor(MID_GRAY)
+    cv.setFont("Helvetica", 10)
+    cv.drawCentredString(W / 2, msg_y, "for outstanding participation in")
 
-    # 13. Signatures (image + line + name + title)
-    sig_cx     = [W * 0.28, W * 0.72]
-    sig_names  = [pres_name,  dh_name]
+    event_box_w = 122 * mm
+    event_box_h = 14 * mm
+    event_box_x = (W - event_box_w) / 2
+    event_box_y = msg_y - 11.5 * mm
+    cv.setFillColor(NAVY)
+    cv.roundRect(event_box_x, event_box_y, event_box_w, event_box_h, 2.8 * mm, fill=1, stroke=0)
+    cv.setFillColor(WHITE)
+    cv.setFont("Helvetica-Bold", 14)
+    cv.drawCentredString(W / 2, event_box_y + 8.2 * mm, "ReSterT - 30")
+    cv.setFillColor(colors.HexColor("#E8C56A"))
+    cv.setFont("Helvetica", 8.5)
+    cv.drawCentredString(W / 2, event_box_y + 3.2 * mm, "Intra-University Programming Contest · August 2025")
+
+    cv.setFillColor(MID_GRAY)
+    cv.setFont("Helvetica", 9.5)
+    cv.drawCentredString(W / 2, event_box_y - 6.5 * mm, "Representing Team")
+    cv.setFillColor(colors.HexColor("#8A5B00"))
+    cv.setFont("Helvetica-Bold", 13)
+    cv.drawCentredString(W / 2, event_box_y - 12.2 * mm, team_name)
+
+    # Signature strip.
+    sign_line_y = page_margin + bottom_band_h + accent_h + 11 * mm
+    cv.setStrokeColor(colors.HexColor("#D4B570"))
+    cv.setLineWidth(0.7)
+    cv.line(W * 0.12, sign_line_y + 9 * mm, W * 0.88, sign_line_y + 9 * mm)
+
+    sig_centers = [W * 0.30, W * 0.70]
+    sig_names = [pres_name, dh_name]
     sig_titles = [pres_title, dh_title]
-    sig_imgs   = [SIGN_PRES,  SIGN_DH]
+    sig_images = [SIGN_PRES, SIGN_DH]
 
-    for sx, sn, st, si in zip(sig_cx, sig_names, sig_titles, sig_imgs):
-        sig_h  = 9 * mm
-        sig_w  = 24 * mm
-        sig_y  = sdiv_y - sig_h - 1*mm
+    for sx, signer_name, signer_title, signer_image in zip(sig_centers, sig_names, sig_titles, sig_images):
+        sig_w = 28 * mm
+        sig_h = 10 * mm
+        sig_y = sign_line_y + 1.8 * mm
         try:
-            cv.drawImage(si, sx - sig_w/2, sig_y,
-                         width=sig_w, height=sig_h,
-                         preserveAspectRatio=True, mask='auto')
+            cv.drawImage(
+                signer_image,
+                sx - sig_w / 2,
+                sig_y,
+                width=sig_w,
+                height=sig_h,
+                preserveAspectRatio=True,
+                mask='auto',
+            )
         except Exception:
             pass
-        line_y = sig_y - 1*mm
-        cv.setStrokeColor(CHARCOAL); cv.setLineWidth(0.6)
-        cv.line(sx - 28*mm, line_y, sx + 28*mm, line_y)
-        cv.setFillColor(NAVY); cv.setFont("Helvetica-Bold", 8.5)
-        cv.drawCentredString(sx, line_y - 4.5*mm, sn)
-        cv.setFillColor(MID_GRAY); cv.setFont("Helvetica", 7.5)
-        cv.drawCentredString(sx, line_y - 8.5*mm, st)
 
-    # 14. Certificate serial number in bottom bar
-    cv.setFillColor(GOLD3); cv.setFont("Helvetica", 7)
-    cv.drawCentredString(W/2, bar_h * 0.35,
-                         f"PCIST / ReSterT-30 / 2025 / {index:03d}")
+        cv.setStrokeColor(CHARCOAL)
+        cv.setLineWidth(0.7)
+        cv.line(sx - 32 * mm, sign_line_y, sx + 32 * mm, sign_line_y)
+
+        cv.setFillColor(NAVY)
+        cv.setFont("Helvetica-Bold", 9)
+        cv.drawCentredString(sx, sign_line_y - 4.2 * mm, signer_name)
+        cv.setFillColor(MID_GRAY)
+        cv.setFont("Helvetica", 7.8)
+        cv.drawCentredString(sx, sign_line_y - 8.5 * mm, signer_title)
+
+    # Serial number and note.
+    cv.setFillColor(colors.HexColor("#E8C56A"))
+    cv.setFont("Helvetica-Bold", 8)
+    cv.drawCentredString(W / 2, page_margin + 5.5 * mm, f"CERTIFICATE ID: PCIST / ReSterT-30 / 2025 / {index:03d}")
 
 
 def parse_participants(csv_path):
