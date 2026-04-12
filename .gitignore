@@ -23,5 +23,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-# files
-.csv/
+# Confidential data
+responses.csv
