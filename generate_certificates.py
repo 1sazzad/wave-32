@@ -162,10 +162,9 @@ def draw_certificate(cv, participant_name, team_name, index,
     cv.drawCentredString(W / 2, event_y, "RESTART-30")
     cv.setFillColor(MID_GRAY)
     cv.setFont("Helvetica", 9.3)
-    cv.drawCentredString(W / 2, event_y - 5.4 * mm, "Programming Contest")
-    cv.drawCentredString(W / 2, event_y - 10.6 * mm, "August 2025")
-    cv.drawCentredString(W / 2, event_y - 15.8 * mm, "Organized by Programming Club of IST (pcIST)")
-    cv.drawCentredString(W / 2, event_y - 21.0 * mm, f"Team: {team_name}")
+    cv.drawCentredString(W / 2, event_y - 5.4 * mm, "Programming Contest · August 2025")
+    cv.drawCentredString(W / 2, event_y - 10.6 * mm, "Organized by Programming Club of IST (pcIST)")
+    cv.drawCentredString(W / 2, event_y - 15.8 * mm, f"Team: {team_name}")
 
     # Signature area.
     sign_line_y = page_margin + 26 * mm
