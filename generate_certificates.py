@@ -1,5 +1,5 @@
 """
-ReSterT-30 Certificate Generator
+Restart-30 Certificate Generator
 =================================
 Generates ICPC-style participation certificates for all contest participants.
 
