@@ -24,27 +24,27 @@ import time
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from pathlib import Path
-
 # ── Gmail configuration ───────────────────────────────────────────────────────
-SENDER_EMAIL      = "your_gmail@gmail.com"          # <-- change this
+SENDER_EMAIL      = os.environ.get("SENDER_EMAIL", "ras.fey.37@gmail.com")
 SENDER_NAME       = "Programming Club of IST"
-GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "xxxx xxxx xxxx xxxx")  # 16-char app password
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 
 # ── Email content ─────────────────────────────────────────────────────────────
-EMAIL_SUBJECT = "Certificate of Participation — ReSterT 30 | Programming Club of IST"
+EMAIL_SUBJECT = "Certificate of Participation — RESTART-30 | Programming Club of IST"
 
 EMAIL_BODY_TEMPLATE = """\
 Dear {name},
 
-Congratulations on participating in ReSterT — 30, the Intra-University \
-Programming Contest organized by the Programming Club of IST in August 2025.
+Congratulations on participating in RESTART-30, 
+Programming Contest - August 2025 organized by the Programming Club of IST.
 
 Please find your Certificate of Participation attached to this email.
 
 We appreciate your enthusiasm and look forward to seeing you at future contests!
 
 Best regards,
+Md Sazzad Hossain
+President
 Programming Club of IST
 Institute of Science and Technology, Dhaka
 """
@@ -55,6 +55,35 @@ MANIFEST    = os.path.join(BASE_DIR, "cert_manifest.json")
 SENT_LOG    = os.path.join(BASE_DIR, "sent_log.json")
 
 DELAY_BETWEEN_EMAILS = 2  # seconds — avoid Gmail rate limits
+
+
+def normalize_app_password(value):
+    # Handle common copy/paste issues: surrounding quotes, spaces, and dashes.
+    cleaned = value.strip().strip('"').strip("'")
+    cleaned = "".join(ch for ch in cleaned if ch.isalnum())
+    return cleaned
+
+
+def validate_gmail_credentials():
+    if not SENDER_EMAIL or "@" not in SENDER_EMAIL:
+        print("Invalid SENDER_EMAIL. Set SENDER_EMAIL env var or update the script.")
+        sys.exit(1)
+
+    if not GMAIL_APP_PASSWORD:
+        print("Missing GMAIL_APP_PASSWORD environment variable.")
+        print("PowerShell example: $env:GMAIL_APP_PASSWORD = \"xxxx xxxx xxxx xxxx\"")
+        sys.exit(1)
+
+    normalized = normalize_app_password(GMAIL_APP_PASSWORD)
+    if len(normalized) != 16:
+        print(
+            "GMAIL_APP_PASSWORD looks invalid. "
+            f"Detected normalized length: {len(normalized)}. "
+            "Use a 16-character Gmail App Password."
+        )
+        sys.exit(1)
+
+    return normalized
 
 
 def load_sent_log():
@@ -90,6 +119,8 @@ def main():
     test_mode  = "--test"   in sys.argv
     resume     = "--resume" in sys.argv
 
+    app_password = validate_gmail_credentials()
+
     with open(MANIFEST, encoding="utf-8") as f:
         participants = json.load(f)
 
@@ -102,7 +133,15 @@ def main():
 
     print(f"Connecting to Gmail SMTP...")
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
+        try:
+            smtp.login(SENDER_EMAIL, app_password)
+        except smtplib.SMTPAuthenticationError:
+            print("\nGmail login failed (SMTP 535).")
+            print("1) Confirm 2-Step Verification is enabled on this Gmail account")
+            print("2) Generate a NEW App Password (Mail) and set GMAIL_APP_PASSWORD")
+            print("3) Ensure SENDER_EMAIL matches the Gmail account that created that app password")
+            print("4) Re-run the command in the same terminal session")
+            raise
         print("Connected.\n")
 
         total   = len(participants)
