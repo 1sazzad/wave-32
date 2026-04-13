@@ -9,11 +9,13 @@ import argparse
 import csv
 import json
 import os
+import tempfile
 import unicodedata
+from pathlib import Path
 from typing import Dict, List
 
 from jinja2 import Environment, FileSystemLoader
-from xhtml2pdf import pisa
+from playwright.sync_api import sync_playwright
 
 # Default signer values used if config file is missing or incomplete.
 DEFAULT_PRESIDENT_NAME = "Md Sazzad Hossain"
@@ -63,6 +65,7 @@ def parse_args():
     parser.add_argument("--president-title", default=None)
     parser.add_argument("--dept-head-name", default=None)
     parser.add_argument("--dept-head-title", default=None)
+    parser.add_argument("--limit", type=int, default=0, help="Generate only the first N certificates (0 = all).")
     return parser.parse_args()
 
 
@@ -86,29 +89,59 @@ def load_signer_config(config_path):
     }
 
 
-def link_callback(uri, _rel):
-    """Resolve local asset paths for xhtml2pdf."""
-    if os.path.isabs(uri):
-        return uri
-    return os.path.join(BASE_DIR, uri)
+def to_file_uri(path_or_name: str) -> str:
+    """Convert a local file path or filename to a file:// URI for browser rendering."""
+    path = Path(path_or_name)
+    if not path.is_absolute():
+        path = Path(BASE_DIR) / path
+    return path.resolve().as_uri()
 
 
-def render_pdf_from_template(template, context, output_path):
+def render_pdf_from_template(page, template, context, output_path):
     html = template.render(**context)
-    with open(output_path, "wb") as pdf_file:
-        result = pisa.CreatePDF(
-            src=html,
-            dest=pdf_file,
-            encoding="utf-8",
-            link_callback=link_callback,
+    temp_html_path = None
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8", dir=BASE_DIR) as temp_html:
+            temp_html.write(html)
+            temp_html_path = temp_html.name
+
+        page.goto(Path(temp_html_path).resolve().as_uri(), wait_until="networkidle")
+        page.pdf(
+            path=output_path,
+            print_background=True,
+            prefer_css_page_size=True,
+            landscape=True,
+            margin={"top": "0", "right": "0", "bottom": "0", "left": "0"},
+            page_ranges="1",
         )
-    if result.err:
-        raise RuntimeError(f"Failed to generate PDF: {output_path}")
+    finally:
+        if temp_html_path and os.path.exists(temp_html_path):
+            os.remove(temp_html_path)
 
 
 def normalize_name(value: str) -> str:
     cleaned = "".join(ch for ch in value if unicodedata.category(ch) != "Cf")
     return " ".join(cleaned.split())
+
+
+def choose_name_font_size(name: str) -> int:
+    n = len(name)
+    if n <= 20:
+        return 42
+    if n <= 26:
+        return 36
+    if n <= 32:
+        return 32
+    return 28
+
+
+def choose_team_font_size(team_line: str) -> int:
+    n = len(team_line)
+    if n <= 24:
+        return 14
+    if n <= 34:
+        return 13
+    return 12
 
 
 def parse_participants_from_csv(csv_path: str) -> List[Dict[str, str]]:
@@ -188,19 +221,22 @@ def parse_participants_from_json(json_path: str) -> List[Dict[str, str]]:
 
 
 def build_context(participant, index, signers):
+    team_line = f"Team: {participant['team']}"
     return {
-        "background_image": BACKGROUND_IMAGE,
-        "left_logo": LEFT_LOGO,
-        "right_logo": RIGHT_LOGO,
+        "background_image": to_file_uri(BACKGROUND_IMAGE),
+        "left_logo": to_file_uri(LEFT_LOGO),
+        "right_logo": to_file_uri(RIGHT_LOGO),
         **{k: v for k, v in TEMPLATE_TEXT.items() if k not in {"contest_date", "detail_line_2", "certificate_id_prefix"}},
         "participant_name": participant["name"],
         "detail_line_1": f"Programming Contest · {TEMPLATE_TEXT['contest_date']}",
         "detail_line_2": TEMPLATE_TEXT["detail_line_2"],
-        "team_line": f"Team: {participant['team']}",
-        "president_signature": PRES_SIGNATURE,
+        "team_line": team_line,
+        "name_font_size": choose_name_font_size(participant["name"]),
+        "team_font_size": choose_team_font_size(team_line),
+        "president_signature": to_file_uri(PRES_SIGNATURE),
         "president_name": signers["president_name"],
         "president_title": signers["president_title"],
-        "dept_head_signature": DH_SIGNATURE,
+        "dept_head_signature": to_file_uri(DH_SIGNATURE),
         "dept_head_name": signers["dept_head_name"],
         "dept_head_title": signers["dept_head_title"],
         "certificate_id": f"{TEMPLATE_TEXT['certificate_id_prefix']} / {index:03d}",
@@ -231,18 +267,27 @@ def main():
     else:
         participants = parse_participants_from_json(input_path)
 
+    if args.limit and args.limit > 0:
+        participants = participants[:args.limit]
+
     print(f"Found {len(participants)} participants from {args.source.upper()} input.\n")
 
     generated = []
-    for i, participant in enumerate(participants, 1):
-        safe_name = "".join(ch for ch in participant["name"] if ch.isalnum() or ch in " _-").strip().replace(" ", "_")
-        out_path = os.path.join(args.output_dir, f"{i:03d}_{safe_name}.pdf")
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1123, "height": 794})
 
-        context = build_context(participant, i, signers)
-        render_pdf_from_template(template, context, out_path)
+        for i, participant in enumerate(participants, 1):
+            safe_name = "".join(ch for ch in participant["name"] if ch.isalnum() or ch in " _-").strip().replace(" ", "_")
+            out_path = os.path.join(args.output_dir, f"{i:03d}_{safe_name}.pdf")
 
-        generated.append({**participant, "pdf": out_path, "index": i, "certificate_id": context["certificate_id"]})
-        print(f"  [{i:03d}] {participant['name']}  |  {participant['team']}")
+            context = build_context(participant, i, signers)
+            render_pdf_from_template(page, template, context, out_path)
+
+            generated.append({**participant, "pdf": out_path, "index": i, "certificate_id": context["certificate_id"]})
+            print(f"  [{i:03d}] {participant['name']}  |  {participant['team']}")
+
+        browser.close()
 
     with open(args.manifest, "w", encoding="utf-8") as f:
         json.dump(generated, f, indent=2, ensure_ascii=False)

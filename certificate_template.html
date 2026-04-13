@@ -18,9 +18,7 @@ body {
 }
 
 .certificate {
-  position: absolute;
-  left: 0;
-  top: 0;
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -28,21 +26,26 @@ body {
 
 .bg {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 1123px;
+  height: 794px;
   background: url("{{ background_image }}") no-repeat center;
   background-size: cover;
 }
 
 .overlay {
   position: absolute;
-  inset: 0;
-  padding: 0;
+  left: 0;
+  top: 0;
+  width: 1123px;
+  height: 794px;
 }
 
 .logo-left,
 .logo-right {
   position: absolute;
-  top: 92px;
+  top: 62px;
   width: 78px;
   height: 78px;
   object-fit: contain;
@@ -58,224 +61,237 @@ body {
 
 .header {
   position: absolute;
-  top: 70px;
+  top: 85px;
   width: 100%;
   text-align: center;
-  font-size: 45px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 1px;
-  color: #0f2a5f;
-  transform: scaleX(0.52);
-  transform-origin: center;
+  letter-spacing: 0.5px;
+  color: #102b54;
 }
 
 .sub-header {
   position: absolute;
-  top: 129px;
+  top: 115px;
   width: 100%;
   text-align: center;
-  font-size: 32px;
-  color: #344f78;
-  transform: scaleX(0.52);
-  transform-origin: center;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #556685;
 }
 
 .title {
   position: absolute;
-  top: 154px;
+  top: 175px;
   width: 100%;
   text-align: center;
-  font-size: 96px;
-  letter-spacing: 8px;
+  font-family: 'Times New Roman', serif;
+  font-size: 64px;
+  letter-spacing: 2px;
   color: #0f2a5f;
   font-weight: 700;
-  transform: scaleX(0.56);
-  transform-origin: center;
 }
 
 .subtitle-wrap {
   position: absolute;
-  top: 266px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
+  top: 255px;
+  left: 0;
+  width: 1123px;
+  height: 36px;
 }
 
 .subtitle-line {
-  width: 104px;
+  position: absolute;
+  top: 18px;
+  width: 102px;
   border-top: 2px solid #d9c084;
 }
 
+.subtitle-line.left {
+  left: 328px;
+}
+
+.subtitle-line.right {
+  right: 328px;
+}
+
 .subtitle-dot {
+  position: absolute;
+  top: 15px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #c6a65f;
 }
 
+.subtitle-dot.left {
+  left: 432px;
+}
+
+.subtitle-dot.right {
+  right: 432px;
+}
+
 .subtitle {
+  position: absolute;
+  width: 100%;
+  top: 0;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 34px;
+  font-size: 16px;
+  font-weight: 500;
   letter-spacing: 2px;
-  color: #273e66;
-  transform: scaleX(0.62);
-  transform-origin: center;
+  color: #102b54;
 }
 
 .presented {
   position: absolute;
-  top: 320px;
+  top: 310px;
   width: 100%;
   text-align: center;
-  font-size: 42px;
+  font-family: 'Times New Roman', serif;
+  font-size: 19px;
   font-style: italic;
-  color: #4b5e80;
-  transform: scaleX(0.52);
-  transform-origin: center;
+  color: #4a5c78;
 }
 
 .name {
   position: absolute;
-  top: 355px;
-  width: 100%;
+  top: 345px;
+  left: 120px;
+  width: 883px;
   text-align: center;
-  font-size: 88px;
-  font-weight: bold;
-  color: #0f2a5f;
-  letter-spacing: 1px;
-  transform: scaleX(0.58);
-  transform-origin: center;
+  font-family: 'Times New Roman', serif;
+  font-weight: 700;
+  color: #102b54;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .name-rule {
   position: absolute;
-  top: 422px;
-  left: 220px;
-  width: 684px;
-  border-top: 2px solid #dbc58e;
+  top: 400px;
+  left: 221px;
+  width: 681px;
+  border-top: 1px solid #d2b56e;
 }
 
 .desc {
   position: absolute;
-  top: 434px;
+  top: 415px;
   width: 100%;
   text-align: center;
-  font-size: 40px;
+  font-family: 'Times New Roman', serif;
+  font-size: 15px;
   font-style: italic;
-  color: #4b5e80;
-  transform: scaleX(0.54);
-  transform-origin: center;
+  color: #4a5c78;
 }
 
 .contest {
   position: absolute;
-  top: 486px;
+  top: 445px;
   width: 100%;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 48px;
+  font-size: 24px;
   font-weight: bold;
-  color: #102d63;
-  transform: scaleX(0.58);
-  transform-origin: center;
+  color: #102b54;
+  letter-spacing: 0.5px;
 }
 
 .details {
   position: absolute;
-  top: 536px;
+  top: 485px;
   width: 100%;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 34px;
-  color: #3a4f74;
-  line-height: 1.35;
-  transform: scaleX(0.57);
-  transform-origin: center;
+  font-size: 12px;
+  color: #556685;
+  line-height: 1.6;
 }
 
 .team {
   position: absolute;
-  top: 614px;
+  top: 535px;
   width: 100%;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 36px;
-  color: #3a4f74;
-  transform: scaleX(0.57);
-  transform-origin: center;
+  font-size: 12px;
+  color: #556685;
+  white-space: nowrap;
 }
 
 .signature-left {
   position: absolute;
-  left: 255px;
-  top: 598px;
+  left: 230px;
+  top: 575px;
   text-align: center;
-  width: 220px;
+  width: 250px;
 }
 
 .signature-right {
   position: absolute;
-  right: 255px;
-  top: 598px;
+  right: 230px;
+  top: 575px;
   text-align: center;
-  width: 220px;
+  width: 250px;
 }
 
 .sig-img {
-  width: 120px;
-  height: 40px;
+  width: 100px;
+  height: 35px;
   object-fit: contain;
 }
 
 .sig-line {
-  margin: 2px auto 8px;
-  width: 220px;
-  border-top: 2px solid #7d8696;
+  margin: 1px auto 6px;
+  width: 210px;
+  border-top: 1px solid #0f2a5f;
 }
 
 .sig-name {
   margin-top: 0;
-  font-size: 11px;
+  font-family: 'Times New Roman', serif;
+  font-size: 14px;
   font-weight: bold;
-  color: #243658;
+  color: #102b54;
 }
 
 .sig-title {
   margin-top: 2px;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
-  color: #3f557a;
+  font-size: 10px;
+  color: #556685;
 }
 
 .middle-separator {
   position: absolute;
-  top: 654px;
-  left: 560px;
-  height: 72px;
-  border-left: 2px solid #d2b56f;
+  top: 590px;
+  left: 561px;
+  height: 80px;
+  border-left: 1px solid #d2b56f;
 }
 
 .emblem {
   position: absolute;
-  top: 740px;
+  top: 855px; /* Pushed offscreen if the background image already handles this, or further down */
   width: 100%;
   text-align: center;
   font-size: 26px;
   letter-spacing: 3px;
   color: #c3a159;
+  display: none; /* Hidden because screenshot shows image uses background laurels */
 }
 
 .cert-id {
   position: absolute;
-  bottom: 16px;
+  bottom: 22px;
   width: 100%;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 11px;
-  color: #44587c;
+  font-size: 10px;
+  color: #556685;
 }
 </style>
 </head>
@@ -294,15 +310,15 @@ body {
     <div class="title">{{ certificate_title }}</div>
 
     <div class="subtitle-wrap">
-      <span class="subtitle-line"></span>
-      <span class="subtitle-dot"></span>
+      <span class="subtitle-line left"></span>
+      <span class="subtitle-dot left"></span>
       <span class="subtitle">{{ certificate_subtitle }}</span>
-      <span class="subtitle-dot"></span>
-      <span class="subtitle-line"></span>
+      <span class="subtitle-dot right"></span>
+      <span class="subtitle-line right"></span>
     </div>
 
     <div class="presented">{{ presented_line }}</div>
-    <div class="name">{{ participant_name }}</div>
+    <div class="name" style="font-size: {{ name_font_size }}px;">{{ participant_name }}</div>
     <div class="name-rule"></div>
 
     <div class="desc">{{ participation_line }}</div>
@@ -313,7 +329,7 @@ body {
       {{ detail_line_2 }}
     </div>
 
-    <div class="team">{{ team_line }}</div>
+    <div class="team" style="font-size: {{ team_font_size }}px;">{{ team_line }}</div>
 
     <div class="signature-left">
       <img src="{{ president_signature }}" class="sig-img" alt="President signature">
@@ -330,7 +346,7 @@ body {
     </div>
 
     <div class="middle-separator"></div>
-    <div class="emblem">❦ ★ ★ ★ ❦</div>
+    <div class="emblem">★ ★ ★</div>
 
     <div class="cert-id">CERTIFICATE ID: {{ certificate_id }}</div>
   </div>
