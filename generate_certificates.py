@@ -1,47 +1,45 @@
-"""
-Restart-30 Certificate Generator
-=================================
-Generates ICPC-style participation certificates for all contest participants.
-
-Usage:
-    python generate_certificates.py
-    python generate_certificates.py "President Name" "President Title" "DeptHead Name" "DeptHead Title"
-
-Requirements:
-    pip install reportlab pillow
-
-Output:
-    certificates/NNN_Participant_Name.pdf  — one PDF per participant
-    cert_manifest.json                     — participant list with PDF paths (used by email sender)
-"""
+﻿"""Generate participant certificates from an HTML template and export as PDFs."""
 
 import csv
 import json
 import os
 import sys
 import unicodedata
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.pdfgen import canvas
 
-# ── Signer configuration ──────────────────────────────────────────────────────
+from jinja2 import Environment, FileSystemLoader
+from xhtml2pdf import pisa
+
 # Default signer values used if config file is missing or incomplete.
 DEFAULT_PRESIDENT_NAME = "Md Sazzad Hossain"
 DEFAULT_PRESIDENT_TITLE = "President, Programming Club of IST"
 DEFAULT_DEPT_HEAD_NAME = "Prof. Dr. [Name]"
 DEFAULT_DEPT_HEAD_TITLE = "Head, Dept. of CSE, IST"
 
-# ── File paths ────────────────────────────────────────────────────────────────
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-CSV_PATH   = os.path.join(BASE_DIR, "responses.csv")
-PCIST_LOGO = os.path.join(BASE_DIR, "pcist_logo.png")
-IST_LOGO   = os.path.join(BASE_DIR, "ist_logo.png")
-SIGN_PRES  = os.path.join(BASE_DIR, "signature_president.png")  # replace with real signature
-SIGN_DH    = os.path.join(BASE_DIR, "signature_depthead.png")   # replace with real signature
+# File paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "responses.csv")
+TEMPLATE_PATH = os.path.join(BASE_DIR, "certificate_template.html")
 OUTPUT_DIR = os.path.join(BASE_DIR, "certificates")
-MANIFEST   = os.path.join(BASE_DIR, "cert_manifest.json")
+MANIFEST = os.path.join(BASE_DIR, "cert_manifest.json")
 SIGNER_CONFIG = os.path.join(BASE_DIR, "signer_config.json")
+
+# Assets used by the HTML template
+BACKGROUND_IMAGE = "certificate_design.png"
+LEFT_LOGO = "pcist_logo.png"
+RIGHT_LOGO = "ist_logo.png"
+PRES_SIGNATURE = "signature_president.png"
+DH_SIGNATURE = "signature_depthead.png"
+
+# Contest/template text
+ORG_HEADER = "INSTITUTE OF SCIENCE AND TECHNOLOGY"
+ORG_SUBHEADER = "Programming Club of IST (pcIST) · DHAKA, BANGLADESH"
+CERTIFICATE_TITLE = "CERTIFICATE"
+CERTIFICATE_SUBTITLE = "OF PARTICIPATION"
+PRESENTED_LINE = "This certificate is proudly presented to"
+PARTICIPATION_LINE = "for outstanding participation in"
+CONTEST_NAME = "RESTART-30"
+CONTEST_DATE = "August 2025"
+DETAIL_LINE_2 = "Organized by Programming Club of IST (pcIST)"
 
 
 def load_signer_config(config_path):
@@ -64,198 +62,33 @@ def load_signer_config(config_path):
     }
 
 
-_signers = load_signer_config(SIGNER_CONFIG)
-PRESIDENT_NAME = sys.argv[1] if len(sys.argv) > 1 else _signers["president_name"]
-PRESIDENT_TITLE = sys.argv[2] if len(sys.argv) > 2 else _signers["president_title"]
-DEPT_HEAD_NAME = sys.argv[3] if len(sys.argv) > 3 else _signers["dept_head_name"]
-DEPT_HEAD_TITLE = sys.argv[4] if len(sys.argv) > 4 else _signers["dept_head_title"]
-
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# ── Color palette (new design style) ─────────────────────────────────────────
-WHITE       = colors.white
-NAVY        = colors.HexColor("#0A2A66")
-DEEP_BLUE   = colors.HexColor("#082354")
-MID_BLUE    = colors.HexColor("#0E3C85")
-CHARCOAL    = colors.HexColor("#1F2933")
-MID_GRAY    = colors.HexColor("#52606D")
-LIGHT_GRAY  = colors.HexColor("#D9E2EC")
-PALE_BLUE   = colors.HexColor("#EEF3FB")
-GOLD        = colors.HexColor("#C8A15A")
-DARK_GOLD   = colors.HexColor("#A67E3D")
-
-W, H = landscape(A4)
+def link_callback(uri, rel):
+    """Resolve local asset paths for xhtml2pdf."""
+    if os.path.isabs(uri):
+        return uri
+    return os.path.join(BASE_DIR, uri)
 
 
-def draw_certificate(cv, participant_name, team_name, index,
-                     pres_name, pres_title, dh_name, dh_title):
+def render_pdf_from_template(template, context, output_path):
+    html = template.render(**context)
+    with open(output_path, "wb") as pdf_file:
+        result = pisa.CreatePDF(
+            src=html,
+            dest=pdf_file,
+            encoding="utf-8",
+            link_callback=link_callback,
+        )
+    if result.err:
+        raise RuntimeError(f"Failed to generate PDF: {output_path}")
 
-    page_margin = 14 * mm
-
-    # ── Background ─────────────────────────────────────────
-    cv.setFillColor(WHITE)
-    cv.rect(0, 0, W, H, fill=1, stroke=0)
-
-    # Soft border layers
-    cv.setStrokeColor(PALE_BLUE)
-    cv.setLineWidth(1.4)
-    cv.rect(page_margin, page_margin, W - 2 * page_margin, H - 2 * page_margin)
-
-    cv.setStrokeColor(NAVY)
-    cv.setLineWidth(1.0)
-    cv.rect(page_margin + 5, page_margin + 5, W - 2 * page_margin - 10, H - 2 * page_margin - 10)
-
-    cv.setStrokeColor(colors.HexColor("#EFE3C8"))
-    cv.setLineWidth(0.8)
-    cv.rect(page_margin + 10, page_margin + 10, W - 2 * page_margin - 20, H - 2 * page_margin - 20)
-
-    # ── Bottom sweeping arcs ────────────────────────────────
-    for width_mm, color in [(560, DEEP_BLUE), (520, NAVY), (480, MID_BLUE)]:
-        cv.setStrokeColor(color)
-        cv.setLineWidth(18)
-        cv.arc(-130 * mm, -150 * mm, width_mm * mm, 250 * mm, 8, 168)
-
-    cv.setStrokeColor(GOLD)
-    cv.setLineWidth(5)
-    cv.arc(-122 * mm, -141 * mm, 510 * mm, 240 * mm, 8, 168)
-
-    # ── Logos ──────────────────────────────────────────────
-    logo_size = 18 * mm
-    logo_y = H - page_margin - 24 * mm
-
-    try:
-        cv.drawImage(PCIST_LOGO, page_margin + 10 * mm, logo_y,
-                     width=logo_size, height=logo_size, mask='auto')
-    except:
-        pass
-
-    try:
-        cv.drawImage(IST_LOGO, W - page_margin - 10 * mm - logo_size, logo_y,
-                     width=logo_size, height=logo_size, mask='auto')
-    except:
-        pass
-
-    # ── Header ─────────────────────────────────────────────
-    cv.setFillColor(NAVY)
-    cv.setFont("Helvetica-Bold", 16)
-    cv.drawCentredString(W / 2, H - page_margin - 10 * mm,
-                         "INSTITUTE OF SCIENCE AND TECHNOLOGY")
-
-    cv.setFont("Helvetica", 12)
-    cv.setFillColor(MID_GRAY)
-    cv.drawCentredString(W / 2, H - page_margin - 17 * mm,
-                         "Programming Club of IST (pcIST) · DHAKA, BANGLADESH")
-
-    # ── Title ──────────────────────────────────────────────
-    title_y = H - page_margin - 50 * mm
-
-    cv.setFont("Times-Bold", 50)
-    cv.setFillColor(NAVY)
-    cv.drawCentredString(W / 2, title_y, "CERTIFICATE")
-
-    cv.setFont("Helvetica", 16)
-    cv.setFillColor(NAVY)
-    cv.drawCentredString(W / 2, title_y - 10 * mm, "OF PARTICIPATION")
-
-    # Decorative line + bullets
-    cv.setStrokeColor(GOLD)
-    cv.setLineWidth(1.2)
-    line_y = title_y - 13 * mm
-    cv.line(W * 0.31, line_y, W * 0.42, line_y)
-    cv.line(W * 0.58, line_y, W * 0.69, line_y)
-    cv.setFillColor(GOLD)
-    cv.circle(W * 0.42, line_y, 1.1 * mm, fill=1, stroke=0)
-    cv.circle(W * 0.58, line_y, 1.1 * mm, fill=1, stroke=0)
-
-    # ── Recipient ──────────────────────────────────────────
-    intro_y = title_y - 25 * mm
-
-    cv.setFont("Times-Italic", 12.5)
-    cv.setFillColor(MID_GRAY)
-    cv.drawCentredString(W / 2, intro_y,
-                         "This certificate is proudly presented to")
-
-    # Name
-    name_font = 34
-    max_width = W * 0.7
-
-    while cv.stringWidth(participant_name, "Times-Bold", name_font) > max_width and name_font > 18:
-        name_font -= 1
-
-    cv.setFont("Times-Bold", name_font)
-    cv.setFillColor(NAVY)
-    cv.drawCentredString(W / 2, intro_y - 12 * mm, participant_name)
-
-    # Underline
-    cv.setStrokeColor(GOLD)
-    cv.setLineWidth(1)
-    cv.line(W * 0.2, intro_y - 14 * mm, W * 0.8, intro_y - 14 * mm)
-
-    # ── Event Info ─────────────────────────────────────────
-    msg_y = intro_y - 25 * mm
-
-    cv.setFont("Times-Italic", 13)
-    cv.setFillColor(MID_GRAY)
-    cv.drawCentredString(W / 2, msg_y, "for outstanding participation in")
-
-    cv.setFont("Helvetica-Bold", 22)
-    cv.setFillColor(NAVY)
-    cv.drawCentredString(W / 2, msg_y - 10 * mm, "RESTART-30")
-
-    cv.setFont("Helvetica", 11.5)
-    cv.setFillColor(MID_GRAY)
-    cv.drawCentredString(W / 2, msg_y - 16 * mm, "Programming Contest · August 2025")
-    cv.drawCentredString(W / 2, msg_y - 21 * mm, "Organized by Programming Club of IST (pcIST)")
-    cv.drawCentredString(W / 2, msg_y - 26 * mm, f"Team: {team_name}")
-
-    # ── Signature Section ──────────────────────────────────
-    sign_y = page_margin + 28 * mm
-
-    sig_positions = [W * 0.3, W * 0.7]
-    names = [pres_name, dh_name]
-    titles = [pres_title, dh_title]
-    images = [SIGN_PRES, SIGN_DH]
-
-    for x, name, title, img in zip(sig_positions, names, titles, images):
-
-        try:
-            cv.drawImage(img, x - 15 * mm, sign_y + 2 * mm,
-                         width=30 * mm, height=10 * mm, mask='auto')
-        except:
-            pass
-
-        cv.setStrokeColor(CHARCOAL)
-        cv.line(x - 30 * mm, sign_y, x + 30 * mm, sign_y)
-
-        cv.setFont("Helvetica-Bold", 9)
-        cv.setFillColor(NAVY)
-        cv.drawCentredString(x, sign_y - 5 * mm, name)
-
-        cv.setFont("Helvetica", 8)
-        cv.setFillColor(MID_GRAY)
-        cv.drawCentredString(x, sign_y - 9 * mm, title)
-
-    cv.setStrokeColor(GOLD)
-    cv.setLineWidth(1)
-    cv.line(W / 2, sign_y - 13 * mm, W / 2, sign_y + 8 * mm)
-
-    cv.setFont("Times-Bold", 14)
-    cv.setFillColor(GOLD)
-    cv.drawCentredString(W / 2, sign_y - 20 * mm, "★ ★ ★")
-
-    # ── Certificate ID ─────────────────────────────────────
-    cv.setFont("Helvetica", 11)
-    cv.setFillColor(MID_GRAY)
-    cv.drawCentredString(W / 2, page_margin + 3 * mm,
-                         f"CERTIFICATE ID: PCIST / RESTART-30 / 2025 / {index:03d}")
 
 def parse_participants(csv_path):
-    """Parse all participants (leader + member 2 + member 3) from Google Form CSV export."""
+    """Parse all participants (leader + member 2 + member 3) from CSV export."""
+
     def normalize_header(value):
         return "".join(ch for ch in value.lower() if ch.isalnum())
 
     def clean_name(value):
-        # Remove zero-width/invisible format chars and normalize spaces.
         cleaned = "".join(ch for ch in value if unicodedata.category(ch) != "Cf")
         return " ".join(cleaned.split())
 
@@ -267,7 +100,7 @@ def parse_participants(csv_path):
         return None
 
     participants = []
-    with open(csv_path, newline='', encoding='utf-8') as f:
+    with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         headers = reader.fieldnames or []
         header_map = {normalize_header(h): h for h in headers if h}
@@ -304,30 +137,73 @@ def parse_participants(csv_path):
     return participants
 
 
+def build_context(participant, index, president_name, president_title, dept_head_name, dept_head_title):
+    return {
+        "background_image": BACKGROUND_IMAGE,
+        "left_logo": LEFT_LOGO,
+        "right_logo": RIGHT_LOGO,
+        "org_header": ORG_HEADER,
+        "org_subheader": ORG_SUBHEADER,
+        "certificate_title": CERTIFICATE_TITLE,
+        "certificate_subtitle": CERTIFICATE_SUBTITLE,
+        "presented_line": PRESENTED_LINE,
+        "participant_name": participant["name"],
+        "participation_line": PARTICIPATION_LINE,
+        "contest_name": CONTEST_NAME,
+        "detail_line_1": f"Programming Contest · {CONTEST_DATE}",
+        "detail_line_2": DETAIL_LINE_2,
+        "team_line": f"Team: {participant['team']}",
+        "president_signature": PRES_SIGNATURE,
+        "president_name": president_name,
+        "president_title": president_title,
+        "dept_head_signature": DH_SIGNATURE,
+        "dept_head_name": dept_head_name,
+        "dept_head_title": dept_head_title,
+        "certificate_id": f"PCIST / RESTART-30 / 2025 / {index:03d}",
+    }
+
+
 def main():
+    if not os.path.exists(TEMPLATE_PATH):
+        raise FileNotFoundError("certificate_template.html not found")
+
+    signers = load_signer_config(SIGNER_CONFIG)
+    president_name = sys.argv[1] if len(sys.argv) > 1 else signers["president_name"]
+    president_title = sys.argv[2] if len(sys.argv) > 2 else signers["president_title"]
+    dept_head_name = sys.argv[3] if len(sys.argv) > 3 else signers["dept_head_name"]
+    dept_head_title = sys.argv[4] if len(sys.argv) > 4 else signers["dept_head_title"]
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    env = Environment(loader=FileSystemLoader(BASE_DIR), autoescape=True)
+    template = env.get_template("certificate_template.html")
+
     participants = parse_participants(CSV_PATH)
     print(f"Found {len(participants)} participants.\n")
 
     generated = []
-    for i, p in enumerate(participants, 1):
-        safe = "".join(ch for ch in p["name"]
-                       if ch.isalnum() or ch in " _-").strip().replace(" ", "_")
-        out_path = os.path.join(OUTPUT_DIR, f"{i:03d}_{safe}.pdf")
+    for i, participant in enumerate(participants, 1):
+        safe_name = "".join(ch for ch in participant["name"] if ch.isalnum() or ch in " _-").strip().replace(" ", "_")
+        out_path = os.path.join(OUTPUT_DIR, f"{i:03d}_{safe_name}.pdf")
 
-        cv = canvas.Canvas(out_path, pagesize=landscape(A4))
-        draw_certificate(cv, p["name"], p["team"], i,
-                         PRESIDENT_NAME, PRESIDENT_TITLE,
-                         DEPT_HEAD_NAME, DEPT_HEAD_TITLE)
-        cv.save()
+        context = build_context(
+            participant,
+            i,
+            president_name,
+            president_title,
+            dept_head_name,
+            dept_head_title,
+        )
+        render_pdf_from_template(template, context, out_path)
 
-        generated.append({**p, "pdf": out_path, "index": i})
-        print(f"  [{i:02d}] {p['name']}  |  {p['team']}")
+        generated.append({**participant, "pdf": out_path, "index": i})
+        print(f"  [{i:02d}] {participant['name']}  |  {participant['team']}")
 
     with open(MANIFEST, "w", encoding="utf-8") as f:
         json.dump(generated, f, indent=2, ensure_ascii=False)
 
-    print(f"\n✓ {len(generated)} certificates → {OUTPUT_DIR}/")
-    print(f"✓ Manifest → {MANIFEST}")
+    print(f"\nGenerated {len(generated)} certificates -> {OUTPUT_DIR}")
+    print(f"Manifest -> {MANIFEST}")
 
 
 if __name__ == "__main__":
