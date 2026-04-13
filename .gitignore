@@ -28,3 +28,11 @@ responses.csv
 signature_depthead.jpeg
 signature_depthead.png
 signature_president.png
+
+# Generated output and local artifacts
+certificates/
+certificates_preview/
+cert_manifest_preview.json
+
+# Optional local config override
+signer_config.local.json
