@@ -1,4 +1,4 @@
-# RESTART-30 Certificate Generator (HTML/React + Python)
+# WAVE-32 Certificate Generator (HTML/React + Python)
 
 This project now uses a **single certificate design** in:
 - `certificate_template.html` (used by Python PDF generator)

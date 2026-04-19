@@ -6,7 +6,7 @@ via Gmail (app password) or any SMTP server.
 
 Setup (one-time):
     1. Enable 2FA on your Gmail account
-    2. Generate an App Password: Google Account → Security → App Passwords
+    2. Generate an App Password: Google Account â†’ Security â†’ App Passwords
     3. Copy that 16-character password into GMAIL_APP_PASSWORD below
        (or set the environment variable GMAIL_APP_PASSWORD)
 
@@ -24,19 +24,19 @@ import time
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-# ── Gmail configuration ───────────────────────────────────────────────────────
+# â”€â”€ Gmail configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 SENDER_EMAIL      = os.environ.get("SENDER_EMAIL", "ras.fey.37@gmail.com")
 SENDER_NAME       = "Programming Club of IST"
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-# ── Email content ─────────────────────────────────────────────────────────────
-EMAIL_SUBJECT = "Certificate of Participation — RESTART-30 | Programming Club of IST"
+# â”€â”€ Email content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+EMAIL_SUBJECT = "Certificate of Participation â€” WAVE-32 | Programming Club of IST"
 
 EMAIL_BODY_TEMPLATE = """\
 Dear {name},
 
-Congratulations on participating in RESTART-30, 
-Programming Contest - August 2025 organized by the Programming Club of IST.
+Congratulations on participating in WAVE-32, 
+Programming Contest - January 2026 organized by the Programming Club of IST.
 
 Please find your Certificate of Participation attached to this email.
 
@@ -49,12 +49,12 @@ Programming Club of IST
 Institute of Science and Technology, Dhaka
 """
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# â”€â”€ Paths â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 MANIFEST    = os.path.join(BASE_DIR, "cert_manifest.json")
 SENT_LOG    = os.path.join(BASE_DIR, "sent_log.json")
 
-DELAY_BETWEEN_EMAILS = 2  # seconds — avoid Gmail rate limits
+DELAY_BETWEEN_EMAILS = 2  # seconds â€” avoid Gmail rate limits
 
 
 def normalize_app_password(value):
@@ -129,7 +129,7 @@ def main():
     if test_mode:
         participants = [participants[0]]   # send only first entry to yourself
         participants[0]["email"] = SENDER_EMAIL
-        print(f"TEST MODE — sending sample certificate to {SENDER_EMAIL}\n")
+        print(f"TEST MODE â€” sending sample certificate to {SENDER_EMAIL}\n")
 
     print(f"Connecting to Gmail SMTP...")
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
@@ -168,21 +168,21 @@ def main():
                 sent_emails.add(email)
                 save_sent_log(sent_emails)
                 success += 1
-                print(f"  [{i:02d}/{total}] ✓ Sent → {name} <{email}>")
+                print(f"  [{i:02d}/{total}] âœ“ Sent â†’ {name} <{email}>")
             except Exception as e:
-                print(f"  [{i:02d}/{total}] ✗ FAILED → {email}: {e}")
+                print(f"  [{i:02d}/{total}] âœ— FAILED â†’ {email}: {e}")
                 failed.append({"email": email, "reason": str(e)})
 
             if i < total:
                 time.sleep(DELAY_BETWEEN_EMAILS)
 
-    print(f"\n─────────────────────────────────")
+    print(f"\nâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")
     print(f"Sent:   {success}")
     print(f"Failed: {len(failed)}")
     if failed:
         print("\nFailed list:")
         for f in failed:
-            print(f"  {f['email']} — {f['reason']}")
+            print(f"  {f['email']} â€” {f['reason']}")
     print(f"\nSent log saved to: {SENT_LOG}")
 
 
