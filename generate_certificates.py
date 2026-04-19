@@ -42,7 +42,7 @@ DH_SIGNATURE = "signature_depthead.png"
 # Contest/template text (dynamic config for all certificates)
 TEMPLATE_TEXT = {
     "org_header": "INSTITUTE OF SCIENCE AND TECHNOLOGY",
-    "org_subheader": "Programming Club of IST (pcIST) Â· DHAKA, BANGLADESH",
+    "org_subheader": "Programming Club of IST (pcIST) · DHAKA, BANGLADESH",
     "certificate_title": "CERTIFICATE",
     "certificate_subtitle": "OF PARTICIPATION",
     "presented_line": "This certificate is proudly presented to",
@@ -50,7 +50,7 @@ TEMPLATE_TEXT = {
     "contest_name": "WAVE-32",
     "contest_date": "January 2026",
     "detail_line_2": "Organized by Programming Club of IST (pcIST)",
-    "certificate_id_prefix": "PCIST / WAVE-32 / 2025",
+    "certificate_id_prefix": "PCIST / WAVE-32 / 2026",
 }
 
 
@@ -228,7 +228,7 @@ def build_context(participant, index, signers):
         "right_logo": to_file_uri(RIGHT_LOGO),
         **{k: v for k, v in TEMPLATE_TEXT.items() if k not in {"contest_date", "detail_line_2", "certificate_id_prefix"}},
         "participant_name": participant["name"],
-        "detail_line_1": f"Programming Contest Â· {TEMPLATE_TEXT['contest_date']}",
+        "detail_line_1": f"Programming Contest - {TEMPLATE_TEXT['contest_date']}",
         "detail_line_2": TEMPLATE_TEXT["detail_line_2"],
         "team_line": team_line,
         "name_font_size": choose_name_font_size(participant["name"]),
